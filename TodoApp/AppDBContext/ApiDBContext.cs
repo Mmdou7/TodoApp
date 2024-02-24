@@ -11,5 +11,6 @@ namespace TodoApp.AppDBContext
         {
         }
         public virtual DbSet<ItemData> Items { get; set; }
+        public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

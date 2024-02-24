@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TodoApp.AppDBContext;
@@ -29,6 +30,20 @@ namespace TodoApp
             builder.Services.AddDbContext<ApiDBContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
                 );
+
+            var Key = Encoding.ASCII.GetBytes(builder.Configuration["JwtConfig:Secret"]);
+            var tokenValidationParams = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                RequireExpirationTime = false
+            };
+
+            builder.Services.AddSingleton(tokenValidationParams);
+
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -36,17 +51,8 @@ namespace TodoApp
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(jwt =>
             {
-                var Key = Encoding.ASCII.GetBytes(builder.Configuration["JwtConfig:Secret"]);
                 jwt.SaveToken = true;
-                jwt.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    RequireExpirationTime = false
-                };
+                jwt.TokenValidationParameters = tokenValidationParams;
             });
 
             builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
